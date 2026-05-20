@@ -7,6 +7,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
   return {
+    base: './',
     plugins: [
       react(), 
       tailwindcss(),
@@ -14,8 +15,8 @@ export default defineConfig(({mode}) => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
         manifest: {
-          name: '4UTOK Investment',
-          short_name: '4UTOK',
+          name: 'ZEXADS Investment',
+          short_name: 'ZEXADS',
           description: 'A platform for investment and daily tasks',
           theme_color: '#000000',
           background_color: '#000000',
