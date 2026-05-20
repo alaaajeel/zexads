@@ -1,0 +1,117 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents an authenticated user in the 4UTOK platform.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Auth UID" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "username": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "invitationCode": { "type": "string" },
+        "myInvitationCode": { "type": "string" },
+        "referrerId": { "type": "string" },
+        "grandReferrerId": { "type": "string" },
+        "greatGrandReferrerId": { "type": "string" },
+        "totalBalance": { "type": "number" },
+        "principal": { "type": "number" },
+        "vipLevel": { "type": "number" },
+        "vipDailyTasks": { "type": "number" },
+        "vipTaskIncome": { "type": "number" },
+        "completedTasks": { "type": "number" },
+        "completedTaskIndices": { "type": "array", "items": { "type": "number" } },
+        "walletAddress": { "type": "string" },
+        "pin": { "type": "string" },
+        "recoveryEmail": { "type": "string" },
+        "teamSize": { "type": "number" },
+        "teamEarnings": { "type": "number" },
+        "streakDays": { "type": "number" },
+        "lastCheckInDate": { "type": "string" },
+        "dailyAdsWatched": { "type": "integer", "description": "Number of ads watched today" },
+        "lastAdDate": { "type": "string", "format": "date", "description": "Last date the user watched an ad" },
+        "hasFeeWaiver": { "type": "boolean" },
+        "profitBoosterTasksLeft": { "type": "number" },
+        "contractReductionDays": { "type": "number" },
+        "lastWithdrawalDate": { "type": "string" },
+        "tempVipLevel": { "type": "number" },
+        "tempVipExpiry": { "type": "string" },
+        "taskNextResetTime": { "type": "number" },
+        "totalFeesPaid": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "totalBalance", "principal", "vipLevel"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A financial transaction for a user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["deposit", "withdraw", "earn", "upgrade", "reward", "team_commission"] },
+        "amount": { "type": "number" },
+        "date": { "type": "string" },
+        "status": { "type": "string", "enum": ["completed", "pending", "failed"] },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "grossAmount": { "type": "number" },
+        "fee": { "type": "number" },
+        "taxRate": { "type": "number" },
+        "walletAddress": { "type": "string" },
+        "method": { "type": "string" }
+      },
+      "required": ["userId", "type", "amount", "date", "status"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Admin access registry.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" }
+      },
+      "required": ["email"]
+    },
+    "WheelSettings": {
+      "title": "Wheel Settings",
+      "description": "Configuration for the lucky wheel prizes and weights.",
+      "type": "object",
+      "properties": {
+        "isEnabled": { "type": "boolean", "description": "Global toggle for the wheel feature" },
+        "prizes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string" },
+              "title": { "type": "string" },
+              "subtitle": { "type": "string" },
+              "icon": { "type": "string" },
+              "weight": { "type": "number" },
+              "rewardValue": { "type": "number" }
+            }
+          }
+        },
+        "nextForcedResult": { "type": "string", "description": "Specific user ID or 'all' to force next result" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores core user data"
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/Transaction" },
+      "description": "Stores user transactions"
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Stores admin privileges"
+    },
+    "/settings/luckyWheel": {
+      "schema": { "$ref": "#/entities/WheelSettings" },
+      "description": "Global wheel configuration"
+    }
+  }
+}

@@ -1,0 +1,101 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // User Validation
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'totalBalance', 'principal', 'vipLevel'])
+        && data.uid == request.auth.uid
+        && data.totalBalance is number
+        && data.principal is number
+        && data.vipLevel is number
+        && data.uid.size() <= 128
+        && (data.email == null || (data.email is string && data.email.size() <= 256))
+        && (data.displayName == null || (data.displayName is string && data.displayName.size() <= 128))
+        && (data.username == null || (data.username is string && data.username.size() <= 128));
+    }
+
+    // Transaction Validation
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['userId', 'type', 'amount', 'date', 'status'])
+        && data.userId == request.auth.uid
+        && data.type in ['deposit', 'withdraw', 'earn', 'upgrade', 'reward', 'team_commission']
+        && data.amount is number
+        && data.date is string
+        && data.date.size() <= 128
+        && data.status in ['completed', 'pending', 'failed'];
+    }
+
+    // --- Rules ---
+
+    match /users/{userId} {
+      allow get: if (isOwner(userId) && isValidId(userId)) || isAdmin();
+      allow list: if isAdmin(); // Users shouldn't be listing each other
+
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming());
+      
+      allow update: if (isOwner(userId) && isValidId(userId) && isValidUser(incoming()) && (
+        // Allow updating specific fields during normal gameplay
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'totalBalance', 'completedTasks', 'completedTaskIndices', 'streakDays', 
+          'lastCheckInDate', 'hasFeeWaiver', 'profitBoosterTasksLeft', 
+          'contractReductionDays', 'lastWithdrawalDate', 'tempVipLevel', 
+          'tempVipExpiry', 'taskNextResetTime', 'dailyAdsWatched', 'lastAdDate',
+          'vipLevel', 'principal', 'vipDailyTasks', 'vipTaskIncome', 'walletAddress'
+        ])
+      )) || isAdmin();
+
+      allow delete: if isAdmin();
+
+      match /transactions/{txId} {
+        allow get: if (isOwner(userId) && isValidId(txId)) || isAdmin();
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid || isAdmin();
+
+        allow create: if isOwner(userId) && isValidId(txId) && isValidTransaction(incoming()) 
+          && exists(/databases/$(database)/documents/users/$(userId));
+        
+        allow update: if isAdmin(); // Users can't change transaction status/details after creation
+        allow delete: if isAdmin();
+      }
+    }
+
+    match /admins/{userId} {
+      allow read: if isSignedIn(); // Need to check if user is admin
+      allow write: if false; // Only manageable via console or service account
+    }
+
+    match /settings/luckyWheel {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}
