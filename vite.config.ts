@@ -13,24 +13,26 @@ export default defineConfig(({mode}) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+        workbox: {
+          clientsClaim: true,
+          skipWaiting: true
+        },
+        includeAssets: ['icon.svg'],
         manifest: {
-          name: 'ZEXADS Investment',
+          name: 'ZEXADS - منصة الاستثمار والأرباح',
           short_name: 'ZEXADS',
-          description: 'A platform for investment and daily tasks',
-          theme_color: '#000000',
-          background_color: '#000000',
+          description: 'منصة متكاملة تجمع بين قوة الاستثمار الآمن وتحقيق العوائد اليومية من المهام.',
+          theme_color: '#0a0f16',
+          background_color: '#0a0f16',
           display: 'standalone',
+          lang: 'ar',
+          dir: 'rtl',
+          start_url: '/',
           icons: [
             {
-              src: 'pwa-192x192.png',
-              sizes: '192x192',
-              type: 'image/png'
-            },
-            {
-              src: 'pwa-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
+              src: 'icon.svg',
+              sizes: '192x192 512x512',
+              type: 'image/svg+xml',
               purpose: 'any maskable'
             }
           ]

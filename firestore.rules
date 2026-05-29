@@ -18,7 +18,9 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        request.auth.uid == '22dYyCXoTUXmMETiAZsFWjllnYw2'
+        request.auth.uid == '22dYyCXoTUXmMETiAZsFWjllnYw2' ||
+        request.auth.uid == 'syE5z4E8DmW7Y4n4gAoYjzh0mz03' ||
+        request.auth.token.email in ['dhi9886@gmail.com', 'admin@zexads.local', 'dhi9886@zexads.local']
       );
     }
 
@@ -54,8 +56,7 @@ service cloud.firestore {
         && data.type in ['deposit', 'withdraw', 'earn', 'upgrade', 'reward', 'team_commission']
         && data.amount is number
         && data.date is string
-        && data.date.size() <= 128
-        && data.status in ['completed', 'pending', 'failed'];
+        && data.status in ['completed', 'pending_review', 'failed'];
     }
 
     // --- Rules ---
@@ -64,42 +65,30 @@ service cloud.firestore {
       allow get: if isSignedIn();
       allow list: if true; // Needed for invitation code lookup
 
-      allow create: if isSignedIn() && isValidId(userId);
+      allow create: if isSignedIn();
       
-      allow update: if isSignedIn() && isValidId(userId) && (
-        (isOwner(userId) && (
-          // Allow owner to update specific fields
-          incoming().diff(existing()).affectedKeys().hasOnly([
-            'totalBalance', 'completedTasks', 'completedTaskIndices', 'streakDays', 
-            'lastCheckInDate', 'hasFeeWaiver', 'profitBoosterTasksLeft', 
-            'contractReductionDays', 'lastWithdrawalDate', 'tempVipLevel', 
-            'tempVipExpiry', 'taskNextResetTime', 'dailyAdsWatched', 'lastAdDate',
-            'vipLevel', 'principal', 'vipDailyTasks', 'vipTaskIncome', 'walletAddress',
-            'teamEarnings', 'teamSize', 'totalFeesPaid'
-          ])
-        )) || 
-        (!isOwner(userId) && (
-          // Allow others (referrals) to ONLY add to balance and team earnings
-          incoming().diff(existing()).affectedKeys().hasOnly(['totalBalance', 'teamEarnings'])
-          && incoming().totalBalance >= existing().totalBalance
-          && incoming().teamEarnings >= existing().teamEarnings
-        )) ||
-        isAdmin()
-      );
+      allow update: if isSignedIn() && (isOwner(userId) || isAdmin());
       
       allow delete: if isAdmin();
 
       match /transactions/{txId} {
-        allow get: if isSignedIn();
-        allow list: if isSignedIn();
-
-        allow create: if isSignedIn() && isValidId(txId) && (
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && (
           isOwner(userId) || 
           (!isOwner(userId) && incoming().type == 'team_commission') ||
           isAdmin()
         );
-        allow update: if isSignedIn() && isValidId(txId) && (isAdmin() || (isOwner(userId) && existing().status == 'pending')); // Admin can update, or user can cancel? (we allow admin mostly for updates)
+        allow update: if isSignedIn() && (isAdmin() || (isOwner(userId) && existing().status == 'pending_review'));
         allow delete: if isAdmin();
+      }
+
+      match /investment_contracts/{contractId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+
+      match /notifications/{notifId} {
+        allow read, update: if isOwner(userId) || isAdmin();
+        allow create: if isSignedIn(); // Allow system or admin to create
       }
     }
 
@@ -110,6 +99,20 @@ service cloud.firestore {
 
     match /settings/luckyWheel {
       allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    match /banners/{bannerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /offers/{offerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
       allow write: if isAdmin();
     }
   }

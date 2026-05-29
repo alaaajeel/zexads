@@ -16,7 +16,9 @@
         "grandReferrerId": { "type": "string" },
         "greatGrandReferrerId": { "type": "string" },
         "totalBalance": { "type": "number" },
+        "main_balance": { "type": "number", "description": "Core available wallet for deposits, daily task rewards, and external withdrawals." },
         "principal": { "type": "number" },
+        "invested_balance": { "type": "number", "description": "Total active capital locked inside active server nodes." },
         "vipLevel": { "type": "number" },
         "vipDailyTasks": { "type": "number" },
         "vipTaskIncome": { "type": "number" },
@@ -94,6 +96,24 @@
         },
         "nextForcedResult": { "type": "string", "description": "Specific user ID or 'all' to force next result" }
       }
+    },
+    "InvestmentContract": {
+      "title": "Investment Contract",
+      "description": "Represents an active or completed server sponsorship contract.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "package_name": { "type": "string" },
+        "capital_amount": { "type": "number" },
+        "total_expected_return": { "type": "number" },
+        "accumulated_profit": { "type": "number" },
+        "duration_days": { "type": "number" },
+        "start_date": { "type": "string" },
+        "end_date": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "matured", "collected"] }
+      },
+      "required": ["id", "user_id", "package_name", "capital_amount", "total_expected_return", "accumulated_profit", "duration_days", "start_date", "end_date", "status"]
     }
   },
   "firestore": {
@@ -104,6 +124,10 @@
     "/users/{userId}/transactions/{transactionId}": {
       "schema": { "$ref": "#/entities/Transaction" },
       "description": "Stores user transactions"
+    },
+    "/users/{userId}/investment_contracts/{contractId}": {
+      "schema": { "$ref": "#/entities/InvestmentContract" },
+      "description": "Stores active user server sponsorship contracts"
     },
     "/admins/{userId}": {
       "schema": { "$ref": "#/entities/Admin" },
